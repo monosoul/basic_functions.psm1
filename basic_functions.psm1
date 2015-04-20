@@ -12,6 +12,8 @@
        Author:  Andrey Nevedomskiy
     .FUNCTIONALITY
        Removes file if it's exist
+    .LINK
+       https://github.com/monosoul/basic_functions.psm1
   #>
   param(
     [parameter(Mandatory = $true)][string]$fileName
@@ -50,6 +52,8 @@ Function Convert-DecToSysNum {
        Author:  Andrey Nevedomskiy
     .FUNCTIONALITY
        Converts decimal to any other system of numeration.
+    .LINK
+       https://github.com/monosoul/basic_functions.psm1
   #>
   param(
     [parameter(Mandatory = $true)][int64]$number,
@@ -119,6 +123,8 @@ Function Import-ExcelAsCsv {
        Author:  Andrey Nevedomskiy
     .FUNCTIONALITY
        Import Excel workbook to PS custom object just like csv.
+    .LINK
+       https://github.com/monosoul/basic_functions.psm1
   #>
   param (
     [parameter(Mandatory = $true)][string]$FileName,
@@ -224,6 +230,8 @@ Function Create-ExcelOfCSV {
        Author:  Andrey Nevedomskiy
     .FUNCTIONALITY
        Creates one Excel workbook out of one or multiple csv files.
+    .LINK
+       https://github.com/monosoul/basic_functions.psm1
   #>
   param(
     [parameter(Mandatory = $true)][PSObject]$fileslist,
@@ -240,24 +248,24 @@ Function Create-ExcelOfCSV {
     ForEach ($file in $fileslist) {
       $filename = $file -replace ".*\\",""
       $worksheetObject = $null
-      # выбираем лист по имени
+      # selecting worksheet by name
       try {
         $worksheetObject = $workbookObject.Worksheets.Item($($filename -replace '.csv',''))
       }
       catch {
       }
-      # если лист с таким именем есть
+      # if there is one
       if ($worksheetObject) {
-        # то дописываем информацию в него
+        # then appending data to it
         
         $TxtConnector = ("TEXT;$file")
         $Connector = $worksheetObject.QueryTables.Add($TxtConnector,$worksheetObject.Range("A$($worksheetObject.UsedRange.Rows.Count + 1)"))
         $query = $worksheetObject.QueryTables.Item($Connector.Name)
         
-        ## указываем разделитель
+        ## setting delimiter
         $query.TextFileOtherDelimiter = $excelObject.Application.International(5)
 
-        ## указываем формат
+        ## setting format
         $query.TextFileParseType = 1
         $query.TextFileColumnDataTypes = ,1 * $worksheetObject.Cells.Columns.Count
         $query.AdjustColumnWidth = 1
@@ -265,17 +273,17 @@ Function Create-ExcelOfCSV {
         $query.Delete() | Out-Null
         $worksheetObject.Rows.Item($($worksheetObject.UsedRange.Rows.Count + 1)).Delete() | Out-Null
       } else {
-        # если нету, то создаём новый лист
+        # if there is no worksheet with the same name then creating new one
         $worksheetObject = $workbookObject.Worksheets.Add()
 
         $TxtConnector = ("TEXT;$file")
         $Connector = $worksheetObject.QueryTables.Add($TxtConnector,$worksheetObject.Range("A1"))
         $query = $worksheetObject.QueryTables.Item($Connector.Name)
 
-        ## указываем разделитель
+        ## setting delimiter
         $query.TextFileOtherDelimiter = $excelObject.Application.International(5)
 
-        ## указываем формат
+        ## setting format
         $query.TextFileParseType = 1
         $query.TextFileColumnDataTypes = ,1 * $worksheetObject.Cells.Columns.Count
         $query.AdjustColumnWidth = 1
@@ -298,10 +306,10 @@ Function Create-ExcelOfCSV {
       $Connector = $worksheetObject.QueryTables.Add($TxtConnector,$worksheetObject.Range("A1"))
       $query = $worksheetObject.QueryTables.Item($Connector.Name)
 
-      ## указываем разделитель
+      ## setting delimiter
       $query.TextFileOtherDelimiter = $excelObject.Application.International(5)
 
-      ## указываем формат
+      ## setting format
       $query.TextFileParseType = 1
       $query.TextFileColumnDataTypes = ,1 * $worksheetObject.Cells.Columns.Count
       $query.AdjustColumnWidth = 1
@@ -311,7 +319,7 @@ Function Create-ExcelOfCSV {
       $worksheetObject.Name = $filename -replace "`.csv",""
       $worksheetObject.UsedRange.Rows.Item(1).AutoFilter() | Out-Null
     }
-    # удаляем лишний лист
+    # removing unnecessary worksheet
     $workbookObject.Worksheets.Item((@($fileslist).Count + 1)).Delete() | Out-Null
   }
   if ($query) {
@@ -381,6 +389,8 @@ Function Get-ADCredentials {
        Author:  Andrey Nevedomskiy
     .FUNCTIONALITY
        Gets AD credentials and checks it for validity.
+    .LINK
+       https://github.com/monosoul/basic_functions.psm1
     .OUTPUTS
        [PSCredential]
   #>
@@ -398,12 +408,11 @@ Function Get-ADCredentials {
     $CurrentDomain = "LDAP://" + ([ADSI]"").distinguishedName
     $domain = New-Object System.DirectoryServices.DirectoryEntry($CurrentDomain, $ADCredentials.username, $ADCredentials.GetNetworkCredential().password)
     if ($domain.name -eq $null) {
-      Write-Host "Введены неверные имя пользователя и пароль!!!" -f red
-      $rep = Read-Host "Повторить ввод? (Y/N)"
+      Write-Host "Invalid username or password!" -f red
+      $rep = Read-Host "Try again? (Y/N)"
       if (($rep -eq "N") -or ($rep -eq "n")) { break }
     } else {
-      Write-Host "Имя пользователя и пароль успешно проверены." -f green
-      ## Сохраняем учётные данные в переменную в области (scope) Script
+      Write-Host "Username and password are valid." -f green
       $adcreds = New-Object System.Management.Automation.PSCredential ($($ADCredentials.UserName -replace ".*\\","" -replace "\@.*",""), $ADCredentials.Password)
     }
   }
@@ -439,6 +448,8 @@ Function New-ADComputer-ADSI {
        Author:  Andrey Nevedomskiy
     .FUNCTIONALITY
        Creates new computer object in specified AD organization unit.
+    .LINK
+       https://github.com/monosoul/basic_functions.psm1
   #>
   param(
     [parameter(Mandatory = $true)][string]$Name,
@@ -454,37 +465,37 @@ Function New-ADComputer-ADSI {
   
   $ComputerName = $Name
   $samname = $ComputerName + "$"
-  # ищем в указанном контейрере AD учётную запись компьютера с заданным именем
+  # searching in provided OU computer object with the same name
   $searcher = [adsisearcher]$Path
   $searcher.Filter = "name=$ComputerName"
   $Computer = [ADSI]$($searcher.FindOne()).Path
-  # если учётная запись с таким именем не существует
+  # if didn't found one
   if (!($Computer)) {
-    # то создаём новую
+    # then creating new one
     $Computer = $domain_entry.create(“Computer”,”cn=$ComputerName”)
-    # добавляем минимальный набор атрибутов
+    # adding minimal set of attributes
     $Computer.put(“sAMAccountName”,$samname) 
     $Computer.put(“userAccountControl”,4128)  
-    write-host "Добавляем $ComputerName в нужный контейнер" 
+    write-host "Adding $ComputerName to selected OU" 
     $Computer.setinfo()
   }     
 
   $Computer_guid = $newguid = new-object -TypeName System.Guid -ArgumentList (,$Computer.objectGUID[0])
   if ($AddUserName) {
-    # Поиск пользователя
+    # searching provided user
     $searcher = [adsisearcher]""
     $searcher.Filter = "userPrincipalName=$AddUserName*"
     $userName = [ADSI]$($searcher.FindOne()).Path
     $User_sid = new-object -TypeName System.Security.Principal.SecurityIdentifier -ArgumentList ($userName.objectSid[0],0)
 
-    # Добавление прав
-    write-host "Добавляем пользователю $AddUserName полные права на $ComputerName" 
+    # granting permissions
+    write-host "Granting $AddUserName full permissions to $ComputerName" 
     $ace = new-object System.DirectoryServices.ActiveDirectoryAccessRule $User_sid,"GenericAll","Allow"
     $Computer.get_objectSecurity().AddAccessRule($ace)
   }
-  # сохраняем изменения
+  # saving changes
   $Computer.CommitChanges()
-  # Capture any errors (e.g. object already exists) and move on 
+  # catching errors
   trap 
   { 
     write-host "Error: $_" 
